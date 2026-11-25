@@ -1,5 +1,10 @@
 package geodesy
 
+import (
+	"fmt"
+	"math"
+)
+
 // GeodeticCoord represents a point using geodetic latitude, longitude, and ellipsoidal height.
 type GeodeticCoord struct {
 	LatitudeDeg  float64
@@ -15,11 +20,25 @@ type ECEFCoord struct {
 }
 
 func ToECEF(coord GeodeticCoord, ell Ellipsoid) (ECEFCoord, error) {
+	// 1. Check if the ellipsoid is valid
+	if err := ValidateEllipsoid(ell); err != nil {
+		return ECEFCoord{}, err
+	}
 
-	// first check the errors to return
-	// 1. check if the ellipsoid is valid
-	// 2. check if the latitude is in the range [-90, 90]
-	// 3. check if the longitude is in the range [-180, 180]
-	// 4. check if the height is a finite number
+	// 2. Check if the latitude is in the range [-90, 90] (also catches NaN)
+	if !(coord.LatitudeDeg >= -90 && coord.LatitudeDeg <= 90) {
+		return ECEFCoord{}, fmt.Errorf("latitude must be between [-90, 90], got %v", coord.LatitudeDeg)
+	}
+
+	// 3. Check if the longitude is in the range [-180, 180] (also catches NaN)
+	if !(coord.LongitudeDeg >= -180 && coord.LongitudeDeg <= 180) {
+		return ECEFCoord{}, fmt.Errorf("longitude must be between [-180, 180], got %v", coord.LongitudeDeg)
+	}
+
+	// 4. Check if the height is a finite number
+	if math.IsNaN(coord.HeightM) || math.IsInf(coord.HeightM, 0) {
+		return ECEFCoord{}, fmt.Errorf("height must be a finite number, got %v", coord.HeightM)
+	}
+
 	return ECEFCoord{}, nil
 }

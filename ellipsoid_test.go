@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestQGS84DerivedParameters(t *testing.T) {
+func TestWGS84DerivedParameters(t *testing.T) {
 	// declare ell
 
 	ell := WGS84()
