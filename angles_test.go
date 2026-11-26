@@ -46,3 +46,44 @@ func TestDegToRad(t *testing.T) {
 	}
 
 }
+
+func TestRadToDeg(t *testing.T) {
+	const epsilon = 1e-9
+
+	tests := []struct {
+		name     string
+		radians  float64
+		expected float64
+	}{
+		// Standard / cardinal angles
+		{name: "zero radians", radians: 0, expected: 0},
+		{name: "pi/6 radians", radians: math.Pi / 6, expected: 30},
+		{name: "pi/4 radians", radians: math.Pi / 4, expected: 45},
+		{name: "pi/3 radians", radians: math.Pi / 3, expected: 60},
+		{name: "pi/2 radians", radians: math.Pi / 2, expected: 90},
+		{name: "pi radians", radians: math.Pi, expected: 180},
+		{name: "3*pi/2 radians", radians: 3 * math.Pi / 2, expected: 270},
+		{name: "2*pi radians", radians: 2 * math.Pi, expected: 360},
+
+		// Negative angles
+		{name: "negative pi/2 radians", radians: -math.Pi / 2, expected: -90},
+		{name: "negative pi radians", radians: -math.Pi, expected: -180},
+
+		// Angles beyond a full circle
+		{name: "4*pi radians (two revolutions)", radians: 4 * math.Pi, expected: 720},
+
+		// Fractional / decimal radians
+		{name: "fractional pi/8 radians", radians: math.Pi / 8, expected: 22.5},
+		{name: "decimal 0.2 radians", radians: 0.2, expected: 11.459155902616466}, // from Python math.degrees(0.2)
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := radToDeg(tc.radians)
+			if math.Abs(actual-tc.expected) > epsilon {
+				t.Errorf("radToDeg(%v) = %v; want %v (diff > %v)",
+					tc.radians, actual, tc.expected, epsilon)
+			}
+		})
+	}
+}
