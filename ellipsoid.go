@@ -59,6 +59,8 @@ func (e Ellipsoid) PrimeVerticalRadius(latRad float64) float64 {
 	return e.SemiMajorAxis / math.Sqrt(1-e.EccentricitySquared()*sinLat*sinLat)
 }
 
+// ValidateEllipsoid reports an error if the semi-major axis is not a finite
+// positive number or the flattening is not a finite number in (0, 1).
 func ValidateEllipsoid(e Ellipsoid) error {
 	if math.IsNaN(e.SemiMajorAxis) || math.IsInf(e.SemiMajorAxis, 0) {
 		return fmt.Errorf("semi-major axis must be a finite positive number, got %v", e.SemiMajorAxis)

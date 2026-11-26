@@ -35,7 +35,7 @@ func TestToECEFValidation(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := ToECEF(GeodeticCoord{tc.latitudeDeg, tc.longitudeDeg, tc.heightM}, tc.ell)
+			_, err := ToECEF(GeodeticCoord{LatitudeDeg: tc.latitudeDeg, LongitudeDeg: tc.longitudeDeg, HeightM: tc.heightM}, tc.ell)
 			gotErr := err != nil
 			if gotErr != tc.wantErr {
 				t.Errorf("ToECEF(%v, %v, %v): err = %v, wantErr = %v",
@@ -47,13 +47,13 @@ func TestToECEFValidation(t *testing.T) {
 
 func TestToECEF(t *testing.T) {
 	tests := []struct {
-		name         string
-		LatitudeDeg  float64
-		LongitudeDeg float64
-		heightM      float64
-		wantX        float64
-		wantY        float64
-		wantZ        float64
+		name  string
+		lat   float64
+		lon   float64
+		h     float64
+		wantX float64
+		wantY float64
+		wantZ float64
 	}{
 		// hand-checkable: exact values from a and b
 		{"equator prime meridian", 0, 0, 0, 6378137, 0, 0},
@@ -75,7 +75,7 @@ func TestToECEF(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := ToECEF(GeodeticCoord{tc.LatitudeDeg, tc.LongitudeDeg, tc.heightM}, ell)
+			got, err := ToECEF(GeodeticCoord{LatitudeDeg: tc.lat, LongitudeDeg: tc.lon, HeightM: tc.h}, ell)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -84,7 +84,7 @@ func TestToECEF(t *testing.T) {
 				!almostEqual(got.Y, tc.wantY, tolerance) ||
 				!almostEqual(got.Z, tc.wantZ, tolerance) {
 				t.Errorf("ToECEF(%v, %v, %v) = (%.6f, %.6f, %.6f), want (%.6f, %.6f, %.6f) within tolerance %g",
-					tc.LatitudeDeg, tc.LongitudeDeg, tc.heightM,
+					tc.lat, tc.lon, tc.h,
 					got.X, got.Y, got.Z,
 					tc.wantX, tc.wantY, tc.wantZ,
 					tolerance)

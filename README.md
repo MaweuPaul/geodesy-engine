@@ -14,7 +14,7 @@ Geodesy is the foundation of geomatics: every survey, map and GIS layer depends 
 - **Map projections**: Transverse Mercator / UTM
 - **Geodetic computations** (later): geodesic distance and bearing, ellipsoidal area, geoid heights
 
-> Status: stage 1 in progress (geodetic → ECEF on WGS84). Ellipsoid model and input validation are done and tested; the conversion formula is next.
+> Status: stage 1 in progress (geodetic → ECEF on WGS84). Geodetic → ECEF is done and tested to 1 mm; ECEF → geodetic is next.
 
 ## Stage 1 design: geodetic → ECEF
 
@@ -49,12 +49,21 @@ GPS positions come as geodetic coordinates (latitude, longitude, ellipsoidal hei
 - `(e Ellipsoid) SemiMinorAxis() float64`: `b = a(1 − f)`
 - `(e Ellipsoid) EccentricitySquared() float64`: `e² = 2f − f²`
 - `(e Ellipsoid) Eccentricity() float64`: `e = √e²`
+- `(e Ellipsoid) PrimeVerticalRadius(latRad float64) float64`: `N = a / √(1 − e²·sin²φ)`, latitude in radians, result in metres
 
 **Coordinates** ([ecef.go](ecef.go))
 
 - `GeodeticCoord{LatitudeDeg, LongitudeDeg, HeightM}`: degrees, degrees, metres above the ellipsoid
 - `ECEFCoord{X, Y, Z}`: metres
-- `ToECEF(coord GeodeticCoord, ell Ellipsoid) (ECEFCoord, error)`: rejects an invalid ellipsoid, latitude outside [−90, 90], longitude outside [−180, 180], NaN inputs, and non-finite height
+- `ValidateGeodeticCoord(coord GeodeticCoord) error`: latitude in [−90, 90], longitude in [−180, 180], finite height; NaN fails
+- `ToECEF(coord GeodeticCoord, ell Ellipsoid) (ECEFCoord, error)`: validates the ellipsoid and the coordinate, then computes
+  - `X = (N + h)·cosφ·cosλ`
+  - `Y = (N + h)·cosφ·sinλ`
+  - `Z = (N(1 − e²) + h)·sinφ`
+
+**Angles** ([angles.go](angles.go))
+
+- `degToRad(degrees float64) float64`: unexported helper
 
 ### Invariants
 
@@ -95,9 +104,11 @@ go test -count=1 -v ./...
 
 | Test | Checks |
 |---|---|
-| `TestWGS84DerivedParameters` | `b`, `e²`, `e` and `f` for WGS84 |
+| `TestWGS84DerivedParameters` | `b`, `e²`, `e`, `f`, and `N` at the equator, 45° and the pole for WGS84 |
 | `TestNewEllipsoidValidation` | rejects zero, negative, NaN and infinite `a`; `f` of 0, NaN, or inverse flattening by mistake |
 | `TestToECEFValidation` | rejects out-of-range and NaN lat/lon, non-finite height, and an invalid ellipsoid |
+| `TestToECEF` | equator (4 longitudes), both poles, a height offset, 45°/45°, Nairobi and Sydney, to 1 mm |
+| `TestDegToRad` | cardinal, negative, fractional and multi-revolution angles |
 
 ## What I learned
 

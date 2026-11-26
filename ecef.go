@@ -19,14 +19,16 @@ type ECEFCoord struct {
 	Z float64
 }
 
+// ToECEF converts a geodetic coordinate to Earth-Centred, Earth-Fixed (ECEF)
+// X, Y, Z in metres on the given ellipsoid. It returns an error if the
+// ellipsoid or the coordinate is invalid.
 func ToECEF(coord GeodeticCoord, ell Ellipsoid) (ECEFCoord, error) {
-	// 1. Check if the ellipsoid is valid
 	if err := ValidateEllipsoid(ell); err != nil {
 		return ECEFCoord{}, err
 	}
 
 	if err := ValidateGeodeticCoord(coord); err != nil {
-		return ECEFCoord{}, fmt.Errorf("Error %v", err)
+		return ECEFCoord{}, err
 	}
 
 	lat := degToRad(coord.LatitudeDeg)
@@ -47,23 +49,24 @@ func ToECEF(coord GeodeticCoord, ell Ellipsoid) (ECEFCoord, error) {
 	return ECEFCoord{X: x, Y: y, Z: z}, nil
 }
 
+// ValidateGeodeticCoord reports an error if the latitude is outside [-90, 90],
+// the longitude is outside [-180, 180], or the height is not a finite number.
+// NaN values fail the range checks.
 func ValidateGeodeticCoord(coord GeodeticCoord) error {
-
-	// 2. Check if the latitude is in the range [-90, 90] (also catches NaN)
+	// 1. Check if the latitude is in the range [-90, 90] (also catches NaN)
 	if !(coord.LatitudeDeg >= -90 && coord.LatitudeDeg <= 90) {
 		return fmt.Errorf("latitude must be between [-90, 90], got %v", coord.LatitudeDeg)
 	}
 
-	// 3. Check if the longitude is in the range [-180, 180] (also catches NaN)
+	// 2. Check if the longitude is in the range [-180, 180] (also catches NaN)
 	if !(coord.LongitudeDeg >= -180 && coord.LongitudeDeg <= 180) {
 		return fmt.Errorf("longitude must be between [-180, 180], got %v", coord.LongitudeDeg)
 	}
 
-	// 4. Check if the height is a finite number
+	// 3. Check if the height is a finite number
 	if math.IsNaN(coord.HeightM) || math.IsInf(coord.HeightM, 0) {
 		return fmt.Errorf("height must be a finite number, got %v", coord.HeightM)
 	}
 
 	return nil
-
 }
