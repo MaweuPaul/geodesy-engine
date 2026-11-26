@@ -14,7 +14,7 @@ Geodesy is the foundation of geomatics: every survey, map and GIS layer depends 
 - **Map projections**: Transverse Mercator / UTM
 - **Geodetic computations** (later): geodesic distance and bearing, ellipsoidal area, geoid heights
 
-> Status: stage 1 in progress (geodetic → ECEF on WGS84)
+> Status: stage 1 in progress (geodetic → ECEF on WGS84). Ellipsoid model and input validation are done and tested; the conversion formula is next.
 
 ## Stage 1 design: geodetic → ECEF
 
@@ -40,7 +40,21 @@ GPS positions come as geodetic coordinates (latitude, longitude, ellipsoidal hei
 
 <!-- Names, inputs, outputs. No bodies. -->
 
--
+**Ellipsoid** ([ellipsoid.go](ellipsoid.go))
+
+- `Ellipsoid{SemiMajorAxis, Flattening}`: `a` in metres, `f` dimensionless (not `1/f`)
+- `WGS84() Ellipsoid`: WGS 84 parameters (NGA TR8350.2)
+- `NewEllipsoid(a, f float64) (Ellipsoid, error)`: builds and validates an ellipsoid
+- `ValidateEllipsoid(e Ellipsoid) error`: `a` finite and positive, `f` finite and in (0, 1)
+- `(e Ellipsoid) SemiMinorAxis() float64`: `b = a(1 − f)`
+- `(e Ellipsoid) EccentricitySquared() float64`: `e² = 2f − f²`
+- `(e Ellipsoid) Eccentricity() float64`: `e = √e²`
+
+**Coordinates** ([ecef.go](ecef.go))
+
+- `GeodeticCoord{LatitudeDeg, LongitudeDeg, HeightM}`: degrees, degrees, metres above the ellipsoid
+- `ECEFCoord{X, Y, Z}`: metres
+- `ToECEF(coord GeodeticCoord, ell Ellipsoid) (ECEFCoord, error)`: rejects an invalid ellipsoid, latitude outside [−90, 90], longitude outside [−180, 180], NaN inputs, and non-finite height
 
 ### Invariants
 
@@ -73,11 +87,17 @@ GPS positions come as geodetic coordinates (latitude, longitude, ellipsoidal hei
 
 ## Testing
 
-Expected values come from pyproj (EPSG:4326 → EPSG:4978).
+Expected values come from pyproj (EPSG:4326 → EPSG:4978) and from points that can be worked out by hand (for example, lat 0 / lon 0 gives X = a; the north pole gives Z = b). Coordinates are compared with a tolerance of 1 mm.
 
 ```
-go test ./...
+go test -count=1 -v ./...
 ```
+
+| Test | Checks |
+|---|---|
+| `TestWGS84DerivedParameters` | `b`, `e²`, `e` and `f` for WGS84 |
+| `TestNewEllipsoidValidation` | rejects zero, negative, NaN and infinite `a`; `f` of 0, NaN, or inverse flattening by mistake |
+| `TestToECEFValidation` | rejects out-of-range and NaN lat/lon, non-finite height, and an invalid ellipsoid |
 
 ## What I learned
 
