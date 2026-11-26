@@ -34,6 +34,24 @@ func TestWGS84DerivedParameters(t *testing.T) {
 			tolerance: 1e-13,
 		},
 		{
+			name:      "prime vertical radius (equator)",
+			got:       ell.PrimeVerticalRadius(0),
+			want:      6378137.0,
+			tolerance: 1e-6,
+		},
+		{
+			name:      "prime vertical radius (45 deg)",
+			got:       ell.PrimeVerticalRadius(math.Pi / 4),
+			want:      6388838.290121148,
+			tolerance: 1e-6,
+		},
+		{
+			name:      "prime vertical radius (pole)",
+			got:       ell.PrimeVerticalRadius(math.Pi / 2),
+			want:      6399593.625758493,
+			tolerance: 1e-6,
+		},
+		{
 			name:      "flattening (sanity check)",
 			got:       ell.Flattening,
 			want:      0.0033528106647474805,

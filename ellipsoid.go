@@ -50,6 +50,15 @@ func (e Ellipsoid) Eccentricity() float64 {
 	return math.Sqrt(e.EccentricitySquared())
 }
 
+// PrimeVerticalRadius returns the prime vertical radius of curvature (N)
+// at the given geodetic latitude (in radians), in the same length units
+// as SemiMajorAxis (typically meters).
+func (e Ellipsoid) PrimeVerticalRadius(latRad float64) float64 {
+	sinLat := math.Sin(latRad)
+
+	return e.SemiMajorAxis / math.Sqrt(1-e.EccentricitySquared()*sinLat*sinLat)
+}
+
 func ValidateEllipsoid(e Ellipsoid) error {
 	if math.IsNaN(e.SemiMajorAxis) || math.IsInf(e.SemiMajorAxis, 0) {
 		return fmt.Errorf("semi-major axis must be a finite positive number, got %v", e.SemiMajorAxis)
